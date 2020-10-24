@@ -4,13 +4,13 @@ echo "Running querysitescript.sh"
 echo " "
 
 # Update/upgrade packages
-apt-get update
-apt-get upgrade -y
+sudo apt-get update
+sudo apt-get upgrade -y
 # Install Apache2 and PHP.
-apt-get install -y apache2 php libapache2-mod-php php-mysql
+sudo apt-get install -y apache2 php libapache2-mod-php php-mysql
 
-
-cp /vagrant/query-site.conf /etc/apache2/sites-available/
+#error with directory
+sudo cp /ubuntu/query-site.conf /etc/apache2/sites-available/
 
 # Enable the newly created website.
 a2ensite query-site
