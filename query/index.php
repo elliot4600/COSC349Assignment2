@@ -10,7 +10,7 @@
       <tr><th>Book Title</th><th>Author</th></tr>
   </div>
       <?php
-         $db_host   = '192.168.2.13';
+         $db_host   = 'ec2-34-226-245-31.compute-1.amazonaws.com';
          $db_name   = 'librarydb';
          $db_user   = 'admin';
          $db_passwd = 'admin';

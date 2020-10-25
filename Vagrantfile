@@ -1,76 +1,102 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-
-# A Vagrantfile that sets up 3 VM's - two web servers and a database server.
-
+class Hash
+  def slice(*keep_keys)
+    h = {}
+    keep_keys.each { |key| h[key] = fetch(key) if has_key?(key) }
+    h
+  end unless Hash.method_defined?(:slice)
+  def except(*less_keys)
+    slice(*keys - less_keys)
+  end unless Hash.method_defined?(:except)
+end
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility).
+
 Vagrant.configure("2") do |config|
+  # The AWS provider does not actually need to use a Vagrant box file.
+  config.vm.box = "dummy"
 
-  # All servers will run Ubuntu
-  config.vm.box = "ubuntu/xenial64"
-  
-  # Automatically checks for Ubuntu updates when "vagrant up" is called from terminal
-  config.vm.box_check_update = true
+  config.vm.provider :aws do |aws, override|
+    # We will gather the data for these three aws configuration
+    # parameters from environment variables (more secure than
+    # committing security credentials to your Vagrantfile).
+    #
+    # aws.access_key_id = "YOUR KEY"
+    # aws.secret_access_key = "YOUR SECRET KEY"
+    # aws.session_token = "SESSION TOKEN"
 
-  # Sets up the webserver for admins to update contents of the library, adding to the SQL database on dbserver.
-  # This server interacts with the database server.
-  config.vm.define "websiteserver" do |websiteserver|
+    # The region for Amazon Educate is fixed.
+    aws.region = "us-east-1"
 
-    # Set server name
-    websiteserver.vm.hostname = "websiteserver"
-  
-    # Enables port forwarding. 
-    # The host computer can connect to IPv4 Address 127.0.0.1 port 8080.
-    # Network request will reach our webserver VM's port 80.
-    websiteserver.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+    # These options force synchronisation of files to the VM's
+    # /vagrant directory using rsync, rather than using trying to use
+    # SMB (which will not be available by default).
+    override.nfs.functional = false
+    override.vm.allowed_synced_folder_types = :rsync
 
-    # Set server name
-    websiteserver.vm.network "private_network", ip: "192.168.2.12"
+    # Following the lab instructions should lead you to provide values
+    # appropriate for your environment for the configuration variable
+    # assignments preceded by double-hashes in the remainder of this
+    # :aws configuration section.
 
-    # Permissions to ensure this will run properly on lab computers.
-    websiteserver.vm.synced_folder ".", "/vagrant", owner: "vagrant", group: "vagrant", mount_options: ["dmode=775,fmode=777"]
+    # The keypair_name parameter tells Amazon which public key to use.
+    aws.keypair_name = "cosc349"
+    # The private_key_path is a file location in your macOS account
+    # (e.g., ~/.ssh/something).
+    override.ssh.private_key_path = "~/.ssh/cosc349.pem"
 
-    websiteserver.vm.provision "shell", path: "webscript.sh"
+    # Choose your Amazon EC2 instance type (t2.micro is cheap).
+    ##aws.instance_type = "t2.micro"
+
+    # You need to indicate the list of security groups your VM should
+    # be in. Each security group will be of the form "sg-...", and
+    # they should be comma-separated (if you use more than one) within
+    # square brackets.
+    #
+    aws.security_groups = ["sg-05648c03499c352b4"]
+
+    # For Vagrant to deploy to EC2 for Amazon Educate accounts, it
+    # seems that a specific availability_zone needs to be selected
+    # (will be of the form "us-east-1a"). The subnet_id for that
+    # availability_zone needs to be included, too (will be of the form
+    # "subnet-...").
+    aws.availability_zone = "us-east-1d"
+    aws.subnet_id = "subnet-909220cf"
+
+    # You need to chose the AMI (i.e., hard disk image) to use. This
+    # will be of the form "ami-...".
+    # 
+    # If you want to use Ubuntu Linux, you can discover the official
+    # Ubuntu AMIs: https://cloud-images.ubuntu.com/locator/ec2/
+    #
+    # You need to get the region correct, and the correct form of
+    # configuration (probably amd64, hvm:ebs-ssd, hvm).
+    #
+    aws.ami = "ami-0739f8cdb239fe9ae"
+
+    # If using Ubuntu, you probably also need to uncomment the line
+    # below, so that Vagrant connects using username "ubuntu".
+    override.ssh.username = "ubuntu"
   end
 
-  # Sets up the webserver for public to view the library's contents.
-  # This server interacts with the database server.
-  config.vm.define "queryserver" do |queryserver|
+  
+  # config.vm.define "websiteserver" do |websiteserver|
+  #   # Set server name
+  #   websiteserver.vm.hostname = "websiteserver"
+  
+  #   websiteserver.vm.provision "shell", path: "webscript.sh"
+  # end
 
-    # Set server name
-    queryserver.vm.hostname = "queryserver"
+  # # Sets up the webserver for public to view the library's contents.
+  # # This server interacts with the database server.
+  # config.vm.define "queryserver" do |queryserver|
 
-    # Enables port forwarding. 
-    # The host computer can connect to IPv4 Address 127.0.0.1 port 8081.
-    # Network request will reach our webserver VM's port 80.
-    queryserver.vm.network "forwarded_port", guest: 80, host: 8081, host_ip: "127.0.0.1"
-
-    # Set server name
-    queryserver.vm.network "private_network", ip: "192.168.2.11"
-
-    # Permissions to ensure this will run properly on lab computers.
-    queryserver.vm.synced_folder ".", "/vagrant", owner: "vagrant", group: "vagrant", mount_options: ["dmode=775,fmode=777"]
-
+  #   # Set server name
+  #   queryserver.vm.hostname = "queryserver"
     
-    queryserver.vm.provision "shell", path: "querysitescript.sh"
-  end
+  #   queryserver.vm.provision "shell", path: "querysitescript.sh"
+  # end
 
-  # Sets up a VM as a database server which will interact with both the public and private web servers.  
-  config.vm.define "dbserver" do |dbserver|
-
-    # Set server name
-    dbserver.vm.hostname = "dbserver"
-	
-    # Assign the IP for the VM on the private network
-    dbserver.vm.network "private_network", ip: "192.168.2.13"
-
-    # Permissions to ensure this will run properly on lab computers.
-    dbserver.vm.synced_folder ".", "/vagrant", owner: "vagrant", group: "vagrant", mount_options: ["dmode=775,fmode=777"]
-
-
-    dbserver.vm.provision "shell", path:"dbserverscript.sh"
-  end
 end
-

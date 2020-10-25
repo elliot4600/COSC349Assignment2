@@ -1,12 +1,12 @@
 echo "Configuring web server"
 echo " "
 
-sudo mkdir query
-cd query
-wget https://assignment2storage.s3.amazonaws.com/query/index.php
-wget https://assignment2storage.s3.amazonaws.com/query/style.css
-cd ../
-wget https://assignment2storage.s3.amazonaws.com/query/query-site.conf
+# sudo mkdir query
+# cd query
+# wget https://assignment2storage.s3.amazonaws.com/query/index.php
+# wget https://assignment2storage.s3.amazonaws.com/query/style.css
+# cd ../
+# wget https://assignment2storage.s3.amazonaws.com/query/query-site.conf
 
 sudo apt-get update
 sudo apt-get upgrade -y

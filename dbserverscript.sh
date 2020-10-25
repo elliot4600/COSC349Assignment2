@@ -34,7 +34,7 @@ echo "GRANT ALL PRIVILEGES ON librarydb.* TO 'admin'@'%'" | mysql
 export MYSQL_PWD='admin'
 
 # Run the initial sql script and create the user admin for the database librarydb.
-cat /vagrant/testdb.sql | mysql -u admin librarydb
+cat /home/ubuntu/testdb.sql | mysql -u admin librarydb
 
 
 # Update the mysql .cnf file to accept connections from any network.
